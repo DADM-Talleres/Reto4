@@ -3,6 +3,7 @@ package com.example.triqui.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.triqui.logic.ComputerPlayer
+import com.example.triqui.logic.Difficulty
 import com.example.triqui.logic.GameResult
 import com.example.triqui.logic.Player
 import com.example.triqui.logic.TicTacToeGame
@@ -16,19 +17,20 @@ import kotlin.time.Duration.Companion.milliseconds
 data class GameUiState(
     val cells: List<Player?> = List(9) { null },
     val currentPlayer: Player = Player.X,
-    val statusText: String = "Turno de X"
+    val statusText: String = "Turno de X",
+    val difficulty: Difficulty = Difficulty.MEDIUM
 )
 
 class GameViewModel : ViewModel() {
     private val game = TicTacToeGame()
     private val human = Player.X
-    private val computer = ComputerPlayer(self = Player.O)
-
+    private var difficulty = Difficulty.MEDIUM
+    private var computer = ComputerPlayer(self = Player.O, strategy = difficulty.toStrategy())
     private val _uiState = MutableStateFlow(toUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
     fun onCellClicked(index: Int) {
-        if (game.currentPlayer != human) return // ignore taps during computer's turn
+        if (game.currentPlayer != human) return
         if (!game.playMove(index)) return
 
         _uiState.value = toUiState()
@@ -38,9 +40,16 @@ class GameViewModel : ViewModel() {
         }
     }
 
+    fun onDifficultySelected(newDifficulty: Difficulty) {
+        difficulty = newDifficulty
+        computer = ComputerPlayer(self = Player.O, strategy = newDifficulty.toStrategy())
+        game.reset()
+        _uiState.value = toUiState()
+    }
+
     private fun makeComputerMove() {
         viewModelScope.launch {
-            delay(400.milliseconds) // small pause so it doesn't feel instant/robotic
+            delay(400.milliseconds)
             val move = computer.chooseMove(game.board)
             if (move >= 0) {
                 game.playMove(move)
@@ -48,7 +57,6 @@ class GameViewModel : ViewModel() {
             }
         }
     }
-
 
     fun onResetClicked() {
         game.reset()
@@ -66,7 +74,8 @@ class GameViewModel : ViewModel() {
         return GameUiState(
             cells = game.board.cells,
             currentPlayer = game.currentPlayer,
-            statusText = status
+            statusText = status,
+            difficulty = difficulty
         )
     }
 }

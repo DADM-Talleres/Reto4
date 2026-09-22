@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.app.ActivityManager.AppTask
+import com.example.triqui.logic.Difficulty
 import com.example.triqui.logic.Player
 
 @Composable
@@ -23,6 +25,11 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
         Text(text = state.statusText, style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(16.dp))
 
+        DifficultySelector(
+            selected = state.difficulty,
+            onSelect = viewModel::onDifficultySelected
+        )
+
         for (row in 0..2) {
             Row {
                 for (col in 0..2) {
@@ -34,6 +41,30 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
 
         Spacer(Modifier.height(16.dp))
         Button(onClick = viewModel::onResetClicked) {Text("Reiniciar")}
+    }
+}
+
+@Composable
+fun DifficultySelector(selected: Difficulty, onSelect: (Difficulty) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Difficulty.entries.forEach { difficulty ->
+            val isSelected = difficulty == selected
+            Button(
+                onClick = { onSelect(difficulty) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSelected)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (isSelected)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            ) {
+                Text(difficulty.label)
+            }
+        }
     }
 }
 
